@@ -10,7 +10,7 @@ from streamlit_chat import message
 from dotenv import load_dotenv
 
 load_dotenv()
-client = openai.OpenAI(api_key=os.getenv("OPENAI_KEY"))
+client = openai.OpenAI(api_key=st.secrets["OPENAI_KEY"])
 
 def get_embedding(text):
     response = client.embeddings.create(
