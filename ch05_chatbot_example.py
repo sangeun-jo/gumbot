@@ -12,14 +12,14 @@ from dotenv import load_dotenv
 load_dotenv()
 # API 키 설정 방식 변경
 api_key = st.secrets.get("OPENAI_KEY") or os.getenv("OPENAI_API_KEY")
-client = openai.OpenAI(api_key=api_key)
+openai.api_key = api_key
 
 def get_embedding(text):
-    response = client.embeddings.create(
+    response = openai.Embedding.create(
         model="text-embedding-ada-002",
         input=text
     )
-    return response.data[0].embedding
+    return response['data'][0]['embedding']
 
 folder_path = "./data"
 file_name = 'embeddings.csv'
@@ -82,7 +82,7 @@ def create_prompt(df, query):
     return messages 
 
 def generate_answer(messages):
-    result = client.chat.completions.create(
+    result = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=messages,
         temperature=0.4,
