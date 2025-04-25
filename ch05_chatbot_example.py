@@ -15,19 +15,62 @@ load_dotenv()
 # Streamlit 페이지 기본 설정
 st.set_page_config(page_title="굼봇", page_icon="🤖")
 
+# 시크릿 관련 디버깅 정보 표시
+st.sidebar.subheader("디버깅 정보")
+if 'OPENAI_KEY' in st.secrets:
+    st.sidebar.success("✅ 'OPENAI_KEY'가 st.secrets에 존재합니다.")
+else:
+    st.sidebar.error("❌ 'OPENAI_KEY'가 st.secrets에 없습니다.")
+
+try:
+    # 시크릿 키 확인 (다른 방식)
+    all_keys = list(st.secrets.keys())
+    st.sidebar.write(f"사용 가능한 시크릿 키: {all_keys}")
+except:
+    st.sidebar.error("시크릿 키 목록을 가져올 수 없습니다.")
+
 # API 키 설정 방식 개선
 api_key = None
 # 1. 환경 변수에서 키 확인
 if os.getenv("OPENAI_API_KEY"):
     api_key = os.getenv("OPENAI_API_KEY")
-# 2. Streamlit 시크릿에서 키 확인
-elif "OPENAI_KEY" in st.secrets:
-    api_key = st.secrets["OPENAI_KEY"]
+    st.sidebar.success("✅ 환경 변수에서 API 키를 가져왔습니다.")
+# 2. Streamlit 시크릿에서 키 확인 (모든 가능한 키 이름 시도)
+elif 'OPENAI_KEY' in st.secrets:
+    api_key = st.secrets['OPENAI_KEY']
+    st.sidebar.success("✅ st.secrets['OPENAI_KEY']에서 API 키를 가져왔습니다.")
+elif 'openai_key' in st.secrets:
+    api_key = st.secrets['openai_key']
+    st.sidebar.success("✅ st.secrets['openai_key']에서 API 키를 가져왔습니다.")
+elif 'OPENAI_API_KEY' in st.secrets:
+    api_key = st.secrets['OPENAI_API_KEY']
+    st.sidebar.success("✅ st.secrets['OPENAI_API_KEY']에서 API 키를 가져왔습니다.")
+# 3. 앱 설정 확인
+elif hasattr(st, 'session_state') and 'OPENAI_KEY' in st.session_state:
+    api_key = st.session_state['OPENAI_KEY']
+    st.sidebar.success("✅ 세션 상태에서 API 키를 가져왔습니다.")
+
+# API 키 설정 폼 추가
+if not api_key:
+    with st.sidebar.form("api_key_form"):
+        user_api_key = st.text_input("OpenAI API 키 입력:", type="password")
+        submit_button = st.form_submit_button("키 저장")
+        
+        if submit_button and user_api_key:
+            api_key = user_api_key
+            st.session_state['OPENAI_KEY'] = user_api_key
+            st.sidebar.success("✅ API 키가 저장되었습니다!")
+            st.experimental_rerun()
 
 # API 키 유효성 검사 및 설정
 if not api_key:
     st.error("⚠️ OpenAI API 키가 설정되지 않았습니다!")
-    st.info("해결 방법: Streamlit Cloud에서는 'OPENAI_KEY'를 시크릿에 설정하세요. 로컬에서는 .env 파일에 'OPENAI_API_KEY'를 설정하세요.")
+    st.info("""
+    ### 해결 방법:
+    1. Streamlit Cloud에서는 앱 설정의 '시크릿' 섹션에서 'OPENAI_KEY'를 추가하세요.
+    2. 로컬에서는 .env 파일에 'OPENAI_API_KEY=your_key_here'를 추가하세요.
+    3. 또는 왼쪽 사이드바에서 직접 API 키를 입력하세요.
+    """)
     st.stop()
 
 # API 키 설정    
